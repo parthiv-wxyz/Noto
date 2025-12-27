@@ -1,5 +1,4 @@
-const updatesRoute = (): string => {
-  return "hello";
+export default function(){
+    const materials= "updRoute route working";
+    return materials;
 };
-
-export default updatesRoute;

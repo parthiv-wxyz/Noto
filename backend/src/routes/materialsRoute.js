@@ -1,5 +1,4 @@
-const materialsRoute = (): string => {
-  return "hello";
+export default function(){
+    const materials= "Materials route working";
+    return materials;
 };
-
-export default materialsRoute;
