@@ -16,3 +16,4 @@ export function getSupabase() {
 
   return supabase;
 }
+  

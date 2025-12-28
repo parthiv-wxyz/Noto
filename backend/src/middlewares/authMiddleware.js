@@ -1,27 +1,47 @@
-import { getSupabase } from "../config/supabase.js";
+import { createClient } from "@supabase/supabase-js";
 
 export async function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith("Bearer "))
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ message: "Missing Token" });
+  }
 
-  const token = authHeader.replace("Bearer ", "");
+  const token = authHeader.replace("Bearer ", "").trim();
 
-  const { data, error } = await getSupabase.auth.getUser(token);
+  const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY,
+    {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    }
+  );
 
-  if (error || !data?.user)
+  const { data: authData, error: authError } =
+    await supabase.auth.getUser();
+
+  if (authError || !authData?.user) {
     return res.status(401).json({ message: "Invalid Token" });
+  }
 
-  req.user = data.user;
+  req.user = authData.user;
+  req.supabase = supabase; 
 
-  const { data: roleRow } = await getSupabase
+  const { data: roleRow, error: roleError } = await supabase
     .from("user_roles")
     .select("role")
-    .eq("user_id", data.user.id)
+    .eq("user_id", authData.user.id)
     .single();
 
-  req.userRole = roleRow?.role || "user";
+  if (roleError) {
+    req.userRole = "user";
+  } else {
+    req.userRole = roleRow.role;
+  }
 
   next();
 }
