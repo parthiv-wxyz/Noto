@@ -1,3 +1,5 @@
+import { logAudit } from "../utils/auditLogger.js";
+
 export async function softDeleteMaterial(req, res) {
   const { id } = req.params;
   const supabase = req.supabase;
@@ -17,7 +19,7 @@ export async function softDeleteMaterial(req, res) {
     actorRole: req.userRole,
     action: "SOFT_DELETE",
     tableName: "materials",
-    recordId: id
+    recordId: id,
   });
 
   res.json({ message: "Material soft deleted" });
@@ -42,7 +44,7 @@ export async function restoreMaterial(req, res) {
     actorRole: req.userRole,
     action: "RESTORE",
     tableName: "materials",
-    recordId: id
+    recordId: id,
   });
 
   res.json({ message: "Material restored" });
@@ -61,15 +63,13 @@ export async function getDownloadUrl(req, res) {
   if (error || !material) {
     return res.status(404).json({ message: "Material not found" });
   }
-
   if (material.deleted_at && req.userRole === "user") {
     return res.status(403).json({ message: "Material not available" });
   }
 
-  const { data: signed, error: signError } =
-    await supabase.storage
-      .from("materials")
-      .createSignedUrl(material.file_url, 600);
+  const { data: signed, error: signError } = await supabase.storage
+    .from("materials")
+    .createSignedUrl(material.file_url, 600);
 
   if (signError) {
     return res.status(500).json({ message: signError.message });
@@ -81,10 +81,10 @@ export async function getDownloadUrl(req, res) {
     actorRole: req.userRole,
     action: "DOWNLOAD",
     tableName: "materials",
-    recordId: id
+    recordId: id,
   });
-  
+
   res.json({
-    download_url: signed.signedUrl
+    download_url: signed.signedUrl,
   });
 }

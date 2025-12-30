@@ -4,18 +4,13 @@ import { requireAdmin } from "../middlewares/requireAdmin.js";
 import { requireSuperAdmin } from "../middlewares/requireSuperAdmin.js";
 import {
   softDeleteMaterial,
-  restoreMaterial
+  restoreMaterial,
 } from "../controllers/materialsController.js";
 import { getDownloadUrl } from "../controllers/materialsController.js";
 
 const router = express.Router();
 
-router.patch(
-  "/:id/delete",
-  authMiddleware,
-  requireAdmin,
-  softDeleteMaterial
-);
+router.patch("/:id/delete", authMiddleware, requireAdmin, softDeleteMaterial);
 
 router.patch(
   "/:id/restore",
@@ -24,10 +19,6 @@ router.patch(
   restoreMaterial
 );
 
-router.get(
-  "/:id/download",
-  authMiddleware,
-  getDownloadUrl
-);
+router.get("/:id/download", authMiddleware, getDownloadUrl);
 
 export default router;

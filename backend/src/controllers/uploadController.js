@@ -1,5 +1,7 @@
 import multer from "multer";
+import path from "path";
 import { logAudit } from "../utils/auditLogger.js";
+import { validateFile } from "../utils/validators.js";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -7,20 +9,32 @@ export const uploadMaterial = [
   upload.single("file"),
   async (req, res) => {
     const supabase = req.supabase;
-
+    const file = req.file;
     if (!req.file) {
       return res.status(400).json({ message: "File required" });
     }
+    
+    const mime_type = file.mimetype;
+    const original_filename = file.originalname;
+    const file_extension = path.extname(file.originalname);
+    const file_size = file.size;
+    const file_category = mime_type.startsWith("image/") ? "IMAGE" : "FILE";
+    
+    const validation = validateFile({
+      file: req.file,
+      required: true,
+    });
+    if (!validation.valid) {
+      return res.status(400).json({ message: validation.message });
+    }
 
-    const { title, subject, course_level, year, semester, module, type } =
-      req.body;
-
+    const { title, subject, course_level, year, semester, module } = req.body;
     const filePath = `${req.user.id}/${Date.now()}-${req.file.originalname}`;
 
     const { error: storageError } = await supabase.storage
       .from("materials")
-      .upload(filePath, req.file.buffer, {
-        contentType: req.file.mimetype,
+      .upload(filePath, file.buffer, {
+        contentType: mime_type,
       });
 
     if (storageError) {
@@ -36,7 +50,11 @@ export const uploadMaterial = [
         year,
         semester,
         module,
-        type,
+        mime_type,
+        original_filename,
+        file_extension,
+        file_size,
+        file_category,
         file_url: filePath,
         uploader: req.user.id,
       })

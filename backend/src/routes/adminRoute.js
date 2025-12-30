@@ -4,7 +4,7 @@ import { requireSuperAdmin } from "../middlewares/requireSuperAdmin.js";
 import {
   promoteToAdmin,
   demoteToUser,
-} from "./adminController.js";
+} from "../controllers/adminController.js";
 
 const router = express.Router();
 

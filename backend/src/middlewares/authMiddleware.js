@@ -21,15 +21,14 @@ export async function authMiddleware(req, res, next) {
     }
   );
 
-  const { data: authData, error: authError } =
-    await supabase.auth.getUser();
+  const { data: authData, error: authError } = await supabase.auth.getUser();
 
   if (authError || !authData?.user) {
     return res.status(401).json({ message: "Invalid Token" });
   }
 
   req.user = authData.user;
-  req.supabase = supabase; 
+  req.supabase = supabase;
 
   const { data: roleRow, error: roleError } = await supabase
     .from("user_roles")

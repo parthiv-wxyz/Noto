@@ -4,14 +4,14 @@ export async function logAudit({
   actorRole,
   action,
   tableName,
-  recordId
+  recordId,
 }) {
   const { error } = await supabase.from("audit_logs").insert({
     actor_id: actorId,
     actor_role: actorRole,
     action,
     table_name: tableName,
-    record_id: recordId
+    record_id: recordId,
   });
 
   if (error) {

@@ -3,3 +3,4 @@ node_modules
 credentials
 what_to_do
 db.ts
+getToken.js
