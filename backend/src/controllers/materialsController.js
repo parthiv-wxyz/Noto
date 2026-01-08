@@ -56,13 +56,14 @@ export async function getDownloadUrl(req, res) {
 
   const { data: material, error } = await supabase
     .from("materials")
-    .select("file_url, deleted_at")
+    .select("file_url, mime_type, original_filename, file_size, deleted_at")
     .eq("id", id)
     .single();
 
   if (error || !material) {
     return res.status(404).json({ message: "Material not found" });
   }
+
   if (material.deleted_at && req.userRole === "user") {
     return res.status(403).json({ message: "Material not available" });
   }
@@ -86,5 +87,8 @@ export async function getDownloadUrl(req, res) {
 
   res.json({
     download_url: signed.signedUrl,
+    filename: material.original_filename,
+    mime_type: material.mime_type,
+    file_size: material.file_size,
   });
 }

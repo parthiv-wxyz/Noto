@@ -13,17 +13,13 @@ export const uploadMaterial = [
     if (!req.file) {
       return res.status(400).json({ message: "File required" });
     }
-    
+
     const mime_type = file.mimetype;
     const original_filename = file.originalname;
     const file_extension = path.extname(file.originalname);
     const file_size = file.size;
-    const file_category = mime_type.startsWith("image/") ? "IMAGE" : "FILE";
-    
-    const validation = validateFile({
-      file: req.file,
-      required: true,
-    });
+
+    const validation = validateFile({ file, required: true });
     if (!validation.valid) {
       return res.status(400).json({ message: validation.message });
     }
@@ -54,7 +50,6 @@ export const uploadMaterial = [
         original_filename,
         file_extension,
         file_size,
-        file_category,
         file_url: filePath,
         uploader: req.user.id,
       })

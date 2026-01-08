@@ -1,6 +1,7 @@
 import multer from "multer";
 import path from "path";
 import { logAudit } from "../utils/auditLogger.js";
+import { validateFile } from "../utils/validators.js";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -9,6 +10,11 @@ export const uploadUpdate = [
   async (req, res) => {
     const supabase = req.supabase;
     const file = req.file;
+
+    const validation = validateFile({ file, required: false });
+    if (!validation.valid) {
+      return res.status(400).json({ message: validation.message });
+    }
 
     let fileData = {};
 
@@ -39,7 +45,6 @@ export const uploadUpdate = [
         original_filename,
         file_extension,
         file_size,
-        file_category,
         file_url: filePath,
       };
     }
@@ -83,7 +88,7 @@ export async function getUpdateDwldUrl(req, res) {
 
   const { data, error } = await supabase
     .from("updates")
-    .select("file_url")
+    .select("file_url, mime_type, original_filename, file_size")
     .eq("id", id)
     .single();
 
@@ -108,5 +113,10 @@ export async function getUpdateDwldUrl(req, res) {
     recordId: id,
   });
 
-  res.json({ download_url: signed.signedUrl });
+  res.json({
+    download_url: signed.signedUrl,
+    filename: data.original_filename,
+    mime_type: data.mime_type,
+    file_size: data.file_size,
+  });
 }

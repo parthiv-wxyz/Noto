@@ -19,7 +19,6 @@ export const uploadQP = [
     const original_filename = file.originalname;
     const file_extension = path.extname(file.originalname);
     const file_size = file.size;
-    const file_category = mime_type.startsWith("image/") ? "IMAGE" : "FILE";
 
     const validation = validateFile({
       file: req.file,
@@ -59,7 +58,6 @@ export const uploadQP = [
         original_filename,
         file_extension,
         file_size,
-        file_category,
         file_url: filePath,
         uploader: req.user.id,
       })
@@ -92,7 +90,7 @@ export async function getQPDwldUrl(req, res) {
 
   const { data, error } = await supabase
     .from("question_papers")
-    .select("file_url")
+    .select("file_url, mime_type, original_filename, file_size")
     .eq("id", id)
     .single();
 
@@ -117,5 +115,11 @@ export async function getQPDwldUrl(req, res) {
     recordId: id,
   });
 
-  res.json({ download_url: signed.signedUrl });
+  res.json({
+  download_url: signed.signedUrl,
+  filename: data.original_filename,
+  mime_type: data.mime_type,
+  file_size: data.file_size,
+});
+
 }
