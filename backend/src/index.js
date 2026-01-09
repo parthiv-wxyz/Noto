@@ -7,7 +7,6 @@ import pingRoute from "./routes/pingRoute.js";
 import updatesRoute from "./routes/updatesRoute.js";
 import uploadRoute from "./routes/uploadRoute.js";
 import adminRoute from "./routes/adminRoute.js";
-import previewRoute from "./routes/previewRoute.js";
 
 const app = express();
 
@@ -21,7 +20,6 @@ app.use("/material", materialsRoute);
 app.use("/updates", updatesRoute);
 app.use("/questionpapers", questionPapersRoute);
 app.use("/upload", uploadRoute);
-app.use("/files", previewRoute);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
