@@ -4,13 +4,21 @@ export async function softDeleteMaterial(req, res) {
   const { id } = req.params;
   const supabase = req.supabase;
 
-  const { error } = await supabase
+  let query = supabase
     .from("materials")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", id);
 
-  if (error) {
-    return res.status(400).json({ message: error.message });
+  if (req.userRole === "user") {
+    query = query.eq("uploader", req.user.id);
+  }
+
+  const { data, error } = await query.select().single();
+
+  if (error || !data) {
+    return res.status(403).json({
+      message: "Not allowed or material not found",
+    });
   }
 
   await logAudit({
@@ -29,13 +37,21 @@ export async function restoreMaterial(req, res) {
   const { id } = req.params;
   const supabase = req.supabase;
 
-  const { error } = await supabase
+  let query = supabase
     .from("materials")
     .update({ deleted_at: null })
     .eq("id", id);
 
-  if (error) {
-    return res.status(400).json({ message: error.message });
+  if (req.userRole === "user") {
+    query = query.eq("uploader", req.user.id);
+  }
+
+  const { data, error } = await query.select().single();
+
+  if (error || !data) {
+    return res.status(403).json({
+      message: "Not allowed or material not found",
+    });
   }
 
   await logAudit({
