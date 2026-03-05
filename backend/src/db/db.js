@@ -1,0 +1,169 @@
+import { supabase } from "../utils/supabaseClient.js";
+
+export async function db() {
+  const sql = `
+    create table if not exists materials (
+      id uuid primary key default gen_random_uuid(),
+      title text not null,
+      subject text not null,
+      course_level text not null check (course_level in ('Graduate', 'Post Graduate')),
+      year int2 not null check (
+        (course_level = 'Graduate' and year between 1 and 4) or
+        (course_level = 'Post Graduate' and year between 1 and 2)
+      ),
+      semester int2 not null check (
+        (course_level = 'Graduate' and semester between 1 and 8) or
+        (course_level = 'Post Graduate' and semester between 1 and 4)
+      ),
+      module int2 not null check (module between 1 and 4),
+      type text check (type in ('PDF', 'PPT', 'DOCX', 'ZIP', 'IMAGE')),
+      uploader uuid,
+      file_url text not null,
+      uploaded_at timestamp default now()
+    );
+
+    do $$
+    begin
+      if not exists (
+        select 1 from pg_constraint
+        where conname = 'unique_material_per_module'
+      ) then
+        alter table materials
+        add constraint unique_material_per_module
+        unique (subject, course_level, year, semester, module, title);
+      end if;
+    end $$;
+
+    alter table materials enable row level security;
+
+    do $$
+    begin
+      if not exists (
+        select 1 from pg_policies
+        where policyname = 'Allow read access for all users'
+          and tablename = 'materials'
+      ) then
+        create policy "Allow read access for all users"
+        on materials
+        for select
+        using (true);
+      end if;
+    end $$;
+
+    do $$
+    begin
+      if not exists (
+        select 1 from pg_policies
+        where policyname = 'Allow insert for authenticated users'
+          and tablename = 'materials'
+      ) then
+        create policy "Allow insert for authenticated users"
+        on materials
+        for insert
+        with check (auth.role() = 'authenticated');
+      end if;
+    end $$;
+
+    do $$
+    begin
+      if not exists (
+        select 1 from pg_policies
+        where policyname = 'Allow delete for own materials'
+          and tablename = 'materials'
+      ) then
+        create policy "Allow delete for own materials"
+        on materials
+        for delete
+        using (auth.uid() = uploader);
+      end if;
+    end $$;
+    
+    create table if not exists updates (
+      id uuid primary key default gen_random_uuid(),
+      title text not null,
+      description text,
+      type text check (type in ('Notice','New Material','Event','System Update')),
+      created_at timestamp default now()
+    );
+
+    alter table updates enable row level security;
+
+    do $$
+    begin
+      if not exists (
+        select 1 from pg_policies
+        where policyname = 'Allow read access to updates'
+          and tablename = 'updates'
+      ) then
+        create policy "Allow read access to updates"
+        on updates 
+        for select
+        using (true);
+      end if;
+    end $$;
+
+    do $$
+    begin
+      if not exists (
+        select 1 from pg_policies
+        where policyname = 'Allow insert to updates for authenticated users'
+          and tablename = 'updates'
+      ) then
+        create policy "Allow insert to updates for authenticated users"
+        on updates for insert
+        with check (auth.role() = 'authenticated');
+      end if;
+    end $$;
+
+    create table if not exists question_papers (
+      id uuid primary key default gen_random_uuid(),
+      subject text not null,
+      course_level text not null check (course_level in ('Graduate', 'Post Graduate')),
+      year int2 not null,
+      semester int2 not null check (
+        (course_level = 'Graduate' and semester between 1 and 8) or
+        (course_level = 'Post Graduate' and semester between 1 and 4)
+      ),
+      exam_type text check (exam_type in ('Regular', 'Supplementary')),
+      file_url text not null,
+      uploaded_at timestamp default now()
+    );
+
+    alter table question_papers enable row level security;
+
+    do $$
+    begin
+      if not exists (
+        select 1 from pg_policies
+        where policyname = 'Allow read access to question papers'
+          and tablename = 'question_papers'
+      ) then
+        create policy "Allow read access to question papers"
+        on question_papers for select
+        using (true);
+      end if;
+    end $$;
+
+    do $$
+    begin
+      if not exists (
+        select 1 from pg_policies
+        where policyname = 'Allow insert to question papers for authenticated users'
+          and tablename = 'question_papers'
+      ) then
+        create policy "Allow insert to question papers for authenticated users"
+        on question_papers
+        for insert
+        with check (auth.role() = 'authenticated');
+      end if;
+    end $$;
+  `;
+
+  const { error } = await supabase.rpc("exec_sql", { sql });
+
+  if (error) {
+    console.error("DB initialize failed: ", error);
+  } else {
+    console.log("DB ready");
+  }
+}
