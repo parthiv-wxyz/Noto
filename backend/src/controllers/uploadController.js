@@ -24,7 +24,30 @@ export const uploadMaterial = [
       return res.status(400).json({ message: validation.message });
     }
 
-    const { title, subject, course_level, year, semester, module } = req.body;
+    const { title, subject, department, course_level, year, semester, module } =
+      req.body;
+
+    const normalizedCourseLevel =
+      course_level === "UG" ? "Graduate" : "Post Graduate";
+
+    const { data: existingMaterial } = await supabase
+      .from("materials")
+      .select("id")
+      .eq("title", title.trim())
+      .eq("department", department)
+      .eq("course_level", normalizedCourseLevel)
+      .eq("year", Number(year))
+      .eq("semester", Number(semester))
+      .eq("subject", subject)
+      .eq("module", Number(module))
+      .maybeSingle();
+
+    if (existingMaterial) {
+      return res.status(400).json({
+        message: "Material already exists",
+      });
+    }
+
     const filePath = `${req.user.id}/${Date.now()}-${req.file.originalname}`;
 
     const { error: storageError } = await supabase.storage
@@ -40,12 +63,13 @@ export const uploadMaterial = [
     const { data, error: dbError } = await supabase
       .from("materials")
       .insert({
-        title,
+        title:title.trim(),
         subject,
-        course_level,
-        year,
-        semester,
-        module,
+        department,
+        course_level: normalizedCourseLevel,
+        year: Number(year),
+        semester: Number(semester),
+        module: Number(module),
         mime_type,
         original_filename,
         file_extension,
@@ -57,7 +81,8 @@ export const uploadMaterial = [
       .single();
 
     if (dbError) {
-      return res.status(403).json({ message: dbError.message });
+      console.log("DB ERROR:", dbError);
+      return res.status(400).json({ message: dbError.message });
     }
 
     await logAudit({

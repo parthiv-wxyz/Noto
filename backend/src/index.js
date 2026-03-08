@@ -10,16 +10,21 @@ import adminRoute from "./routes/adminRoute.js";
 
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/admin", adminRoute);
 app.use("/ping", pingRoute);
-app.use("/material", materialsRoute);
+app.use("/api/material", materialsRoute);
 app.use("/updates", updatesRoute);
-app.use("/questionpapers", questionPapersRoute);
-app.use("/upload", uploadRoute);
+app.use("/api/questionpapers", questionPapersRoute);
+app.use("/api/upload", uploadRoute);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });

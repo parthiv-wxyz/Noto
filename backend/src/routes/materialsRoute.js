@@ -5,6 +5,7 @@ import { requireSuperAdmin } from "../middlewares/requireSuperAdmin.js";
 import {
   softDeleteMaterial,
   restoreMaterial,
+  getMaterials,
 } from "../controllers/materialsController.js";
 import { getDownloadUrl } from "../controllers/materialsController.js";
 
@@ -16,9 +17,10 @@ router.patch(
   "/:id/restore",
   authMiddleware,
   requireSuperAdmin,
-  restoreMaterial
+  restoreMaterial,
 );
 
 router.get("/:id/download", authMiddleware, getDownloadUrl);
 
+router.get("/", authMiddleware, getMaterials);
 export default router;

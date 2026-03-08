@@ -28,15 +28,15 @@ export const uploadQP = [
       return res.status(400).json({ message: validation.message });
     }
 
-    const { title, subject, course_level, year, semester, exam_type } =
+    const { title, subject, department, course_level, year, semester, exam_type } =
       req.body;
 
-    const filePath = `questionpapers/${
+    const filePath = `question_papers/${
       req.user.id
     }/${Date.now()}-${original_filename}`;
 
     const { error: storageError } = await supabase.storage
-      .from("materials")
+      .from("question_papers")
       .upload(filePath, file.buffer, {
         contentType: mime_type,
       });
@@ -50,6 +50,7 @@ export const uploadQP = [
       .insert({
         title,
         subject,
+        department,
         course_level,
         year,
         semester,
@@ -73,7 +74,7 @@ export const uploadQP = [
       actorId: req.user.id,
       actorRole: req.userRole,
       action: "UPLOAD",
-      tableName: "questionpapers",
+      tableName: "question_papers",
       recordId: data.id,
     });
 
@@ -99,7 +100,7 @@ export async function getQPDwldUrl(req, res) {
   }
 
   const { data: signed, error: signError } = await supabase.storage
-    .from("materials")
+    .from("question_papers")
     .createSignedUrl(data.file_url, 600);
 
   if (signError) {
@@ -111,7 +112,7 @@ export async function getQPDwldUrl(req, res) {
     actorId: req.user.id,
     actorRole: req.userRole,
     action: "DOWNLOAD",
-    tableName: "questionpapers",
+    tableName: "question_papers",
     recordId: id,
   });
 
@@ -124,3 +125,25 @@ export async function getQPDwldUrl(req, res) {
 
 }
 
+export async function getQuestionPapers(req, res) {
+  const supabase = req.supabase;
+
+  const { department, subject, course_level, year, semester, exam_type } = req.query;
+
+  let query = supabase.from("question_papers").select("*");
+
+  if (department) query = query.eq("department", department);
+  if (subject) query = query.eq("subject", subject);
+  if (course_level) query = query.eq("course_level", course_level);
+  if (year) query = query.eq("year", year);
+  if (semester) query = query.eq("semester", semester);
+  if (exam_type) query = query.eq("exam_type", exam_type);
+
+  const { data, error } = await query.order("created_at", { ascending: false });
+
+  if (error) {
+    return res.status(500).json({ message: error.message });
+  }
+
+  res.json(data);
+}

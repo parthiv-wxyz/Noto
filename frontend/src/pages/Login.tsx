@@ -18,6 +18,7 @@ function Login() {
       return;
     }
 
+  console.log("login success");
     navigate("/upload");
   };
 

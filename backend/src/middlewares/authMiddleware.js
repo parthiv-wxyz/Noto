@@ -41,6 +41,5 @@ export async function authMiddleware(req, res, next) {
   } else {
     req.userRole = roleRow.role;
   }
-
   next();
 }
