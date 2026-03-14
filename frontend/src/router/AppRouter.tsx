@@ -2,8 +2,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
-import Upload from "../pages/Upload";
+import Upload from "../pages/upload/Upload";
 import ProtectedRoute from "../layouts/ProtectedRoute";
+import Browse from "../pages/Browse";
 
 function AppRouter() {
   return (
@@ -21,6 +22,7 @@ function AppRouter() {
             </ProtectedRoute>
           }
         />
+        <Route path="/browse" element={<Browse />} />
       </Routes>
     </BrowserRouter>
   );

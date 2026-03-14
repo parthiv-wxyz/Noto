@@ -109,10 +109,51 @@ export async function getDownloadUrl(req, res) {
   });
 }
 
+// export async function getMaterials(req, res) {
+//   const supabase = req.supabase;
+
+//   const { department, subject, course_level, year, semester, module } =
+//     req.query;
+
+//   let query = supabase.from("materials").select("*").is("deleted_at", null);
+
+//   if (department) query = query.eq("department", department);
+//   if (subject) query = query.eq("subject", subject);
+//   if (course_level) {
+//     const normalizedCourseLevel =
+//       course_level === "UG"
+//         ? "Graduate"
+//         : course_level === "PG"
+//           ? "Post Graduate"
+//           : course_level;
+
+//     query = query.eq("course_level", normalizedCourseLevel);
+//   }
+//   if (year) query = query.eq("year", Number(year));
+//   if (semester) query = query.eq("semester", Number(semester));
+//   if (module) query = query.eq("module", Number(module));
+
+//   const { data, error } = await query.order("created_at", { ascending: false });
+
+//   if (error) {
+//     return res.status(500).json({ message: error.message });
+//   }
+
+//   res.json(data);
+// }
+
 export async function getMaterials(req, res) {
   const supabase = req.supabase;
 
-  const { department, subject, course_level, year, semester, module } = req.query;
+  const {
+    search,
+    department,
+    subject,
+    course_level,
+    year,
+    semester,
+    module,
+  } = req.query;
 
   let query = supabase
     .from("materials")
@@ -120,13 +161,24 @@ export async function getMaterials(req, res) {
     .is("deleted_at", null);
 
   if (department) query = query.eq("department", department);
-  if (subject) query = query.eq("subject", subject);
-  if (course_level) query = query.eq("course_level", course_level);
-  if (year) query = query.eq("year", year);
-  if (semester) query = query.eq("semester", semester);
-  if (module) query = query.eq("module", module);
 
-  const { data, error } = await query.order("created_at", { ascending: false });
+  if (subject) query = query.eq("subject", subject);
+
+  if (course_level) query = query.eq("course_level", course_level);
+
+  if (year) query = query.eq("year", Number(year));
+
+  if (semester) query = query.eq("semester", Number(semester));
+
+  if (module) query = query.eq("module", Number(module));
+
+  if (search) {
+    query = query.or(`title.ilike.${search}%,subject.ilike.${search}%`);
+  }
+
+  const { data, error } = await query.order("created_at", {
+    ascending: false,
+  });
 
   if (error) {
     return res.status(500).json({ message: error.message });

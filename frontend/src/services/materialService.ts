@@ -1,7 +1,11 @@
 import api from "./api";
+import type { Material } from "../utils/types/material";
 
-export const getMaterials = async () => {
-  const response = await api.get("/material");
+export const getMaterials = async (filters?: any): Promise<Material[]> => {
+  const response = await api.get("/material", {
+    params: filters,
+  });
+
   return response.data;
 };
 

@@ -17,8 +17,6 @@ function Login() {
       alert(error.message);
       return;
     }
-
-  console.log("login success");
     navigate("/upload");
   };
 
