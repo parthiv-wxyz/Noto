@@ -8,36 +8,21 @@ function Login() {
   const navigate = useNavigate();
 
   const handleLogin = async () => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       alert(error.message);
       return;
     }
-    navigate("/upload");
+    navigate("/dashboard");
   };
 
   return (
     <div>
       <h2>Login</h2>
-
-      <input
-        type="email"
-        placeholder="Email"
-        onChange={(e) => setEmail(e.target.value)}
-      />
+      <input type="email" placeholder="Email" onChange={(e) => setEmail(e.target.value)} />
       <br /><br />
-
-      <input
-        type="password"
-        placeholder="Password"
-        onChange={(e) => setPassword(e.target.value)}
-      />
+      <input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} />
       <br /><br />
-
       <button onClick={handleLogin}>Login</button>
     </div>
   );

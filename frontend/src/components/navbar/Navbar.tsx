@@ -1,11 +1,12 @@
 import { supabase } from "../../services/supabaseClient";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import "./Navbar.css";
 import { useState } from "react";
 
 function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -20,11 +21,25 @@ function Navbar() {
     navigate(path);
   };
 
+  const isOnPage = (path: string) => location.pathname === path;
+
   return (
     <nav className="navbar">
       <div className="navbar-inner">
-        {/* Logo / Brand */}
-        <div className="navbar-brand" onClick={() => handleNav("/")}>
+        {/* Back button */}
+        <button
+          onClick={() => navigate(-1)}
+          className="btn-logout"
+          style={{ marginRight: "0.25rem" }}
+          title="Go back"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
+
+        {/* Brand */}
+        <div className="navbar-brand" onClick={() => handleNav("/dashboard")}>
           <div className="brand-icon">
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
               <rect x="2" y="2" width="8" height="10" rx="1.5" fill="currentColor" opacity="0.9" />
@@ -39,15 +54,18 @@ function Navbar() {
           </div>
         </div>
 
-        {/* Desktop: Nav Links */}
+        {/* Desktop Nav Links */}
         <div className="navbar-links">
-          <a className="nav-link" onClick={() => handleNav("/browse")}>Browse</a>
-          {user && (
+          <a className="nav-link" onClick={() => handleNav("/dashboard")}>Dashboard</a>
+          {user && !isOnPage("/browse") && (
+            <a className="nav-link" onClick={() => handleNav("/browse")}>Browse</a>
+          )}
+          {user && !isOnPage("/upload") && (
             <a className="nav-link" onClick={() => handleNav("/upload")}>Upload</a>
           )}
         </div>
 
-        {/* Desktop: Auth Button */}
+        {/* Desktop Auth */}
         <div className="navbar-actions">
           {user ? (
             <div className="user-section">
@@ -75,22 +93,23 @@ function Navbar() {
           )}
         </div>
 
-        {/* Mobile: Hamburger */}
+        {/* Mobile Hamburger */}
         <button
           className={`hamburger ${menuOpen ? "open" : ""}`}
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="Toggle menu"
         >
-          <span />
-          <span />
-          <span />
+          <span /><span /><span />
         </button>
       </div>
 
       {/* Mobile Drawer */}
       <div className={`mobile-drawer ${menuOpen ? "visible" : ""}`}>
-        <a className="drawer-link" onClick={() => handleNav("/browse")}>Browse</a>
-        {user && (
+        <a className="drawer-link" onClick={() => handleNav("/dashboard")}>Dashboard</a>
+        {user && !isOnPage("/browse") && (
+          <a className="drawer-link" onClick={() => handleNav("/browse")}>Browse</a>
+        )}
+        {user && !isOnPage("/upload") && (
           <a className="drawer-link" onClick={() => handleNav("/upload")}>Upload</a>
         )}
         <div className="drawer-divider" />
@@ -109,11 +128,6 @@ function Navbar() {
         ) : (
           <button className="btn-login drawer-btn" onClick={() => handleNav("/login")}>
             Sign In
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-              <polyline points="10 17 15 12 10 7" />
-              <line x1="15" y1="12" x2="3" y2="12" />
-            </svg>
           </button>
         )}
       </div>

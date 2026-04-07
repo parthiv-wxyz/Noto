@@ -7,15 +7,11 @@ import pingRoute from "./routes/pingRoute.js";
 import updatesRoute from "./routes/updatesRoute.js";
 import uploadRoute from "./routes/uploadRoute.js";
 import adminRoute from "./routes/adminRoute.js";
+import dashboardRoute from "./routes/dashboardRoute.js";
 
 const app = express();
 
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-  })
-);
+app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -25,6 +21,7 @@ app.use("/api/material", materialsRoute);
 app.use("/updates", updatesRoute);
 app.use("/api/questionpapers", questionPapersRoute);
 app.use("/api/upload", uploadRoute);
+app.use("/api/dashboard", dashboardRoute);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });

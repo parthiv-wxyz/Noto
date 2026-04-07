@@ -8,17 +8,57 @@ import type { Material } from "../utils/types/material";
 function Browse() {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [courseLevel, setCourseLevel] = useState("");
   const [department, setDepartment] = useState("");
   const [semester, setSemester] = useState("");
   const [subject, setSubject] = useState("");
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    if (
+      !debouncedSearch.trim() &&
+      !courseLevel &&
+      !department &&
+      !semester &&
+      !subject
+    ) {
+      setMaterials([]);
+      return;
+    }
+
+    fetchMaterials();
+  }, [debouncedSearch, courseLevel, department, semester, subject]);
+
+  const fetchMaterials = async () => {
+    try {
+      const data = await getMaterials({
+        search: debouncedSearch,
+        course_level: courseLevel,
+        department,
+        semester,
+        subject,
+      });
+
+      setMaterials(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const semesterOptions =
     courseLevel === "UG"
       ? ["1", "2", "3", "4", "5", "6", "7", "8"]
       : courseLevel === "PG"
-      ? ["1", "2", "3", "4"]
-      : [];
+        ? ["1", "2", "3", "4"]
+        : [];
 
   const subjectData: Record<string, Record<string, string[]>> = {
     "Computer Science": {
@@ -42,50 +82,28 @@ function Browse() {
   const subjectOptions =
     department && semester ? subjectData[department]?.[semester] || [] : [];
 
-  const handleSearch = async () => {
+  const handleSearchInput = async (value: string) => {
+    setSearch(value);
+
+    if (!value.trim()) {
+      setMaterials([]);
+      return;
+    }
+
     try {
-      const filters: any = {};
+      const data = await getMaterials({
+        search: value,
+        course_level: courseLevel,
+        department,
+        semester,
+        subject,
+      });
 
-      if (search.trim()) filters.search = search;
-      if (courseLevel) filters.course_level = courseLevel;
-      if (department) filters.department = department;
-      if (semester) filters.semester = semester;
-      if (subject) filters.subject = subject;
-
-      const data = await getMaterials(filters);
-
-      const filtered = data.filter((item: Material) =>
-        item.title.toLowerCase().startsWith(search.toLowerCase())
-      );
-
-      setMaterials(search ? filtered : data);
+      setMaterials(data);
     } catch (error) {
-      console.error("Failed to fetch materials", error);
+      console.error(error);
     }
   };
-
-  const handleSearchInput = async (value: string) => {
-  setSearch(value);
-
-  if (!value.trim()) {
-    setMaterials([]);
-    return;
-  }
-
-  try {
-    const data = await getMaterials({
-      search: value,
-      course_level: courseLevel,
-      department,
-      semester,
-      subject,
-    });
-
-    setMaterials(data);
-  } catch (error) {
-    console.error(error);
-  }
-};
 
   const handleRefresh = () => {
     setSearch("");
@@ -161,10 +179,7 @@ function Browse() {
         <br />
         <br />
 
-        <select
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-        >
+        <select value={subject} onChange={(e) => setSubject(e.target.value)}>
           <option value="">Select Subject</option>
           {subjectOptions.map((sub) => (
             <option key={sub} value={sub}>
@@ -176,7 +191,6 @@ function Browse() {
         <br />
         <br />
 
-        <button onClick={handleSearch}>Search</button>
         <button onClick={handleRefresh}>Refresh</button>
 
         <br />
