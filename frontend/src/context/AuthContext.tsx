@@ -1,6 +1,6 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useState, useCallback } from "react";
 import { supabase } from "../services/supabaseClient";
-
+import api from "../services/api";
 
 type AuthContextType = {
   user: any;
@@ -19,43 +19,43 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchRole = async (userId: string, token: string) => {
-    const res = await fetch("http://localhost:5000/ping", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setRole(data.role);
-    } else {
+  const fetchRole = useCallback(async () => {
+    try {
+      const res = await api.get("/ping");
+      setRole(res.data?.role ?? "user");
+    } catch {
       setRole("user");
     }
-  };
+  }, []);
 
   useEffect(() => {
+    // Initial session check
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user && session?.access_token) {
-        fetchRole(session.user.id, session.access_token).finally(() =>
-          setLoading(false)
-        );
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+
+      if (currentUser) {
+        fetchRole().finally(() => setLoading(false));
       } else {
+        setRole(null);
         setLoading(false);
       }
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setUser(session?.user ?? null);
-        if (session?.user && session?.access_token) {
-          await fetchRole(session.user.id, session.access_token);
-        } else {
-          setRole(null);
-        }
+    // Listen for auth state changes (login, logout, token refresh)
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      const newUser = session?.user ?? null;
+      setUser(newUser);
+
+      if (newUser) {
+        fetchRole();
+      } else {
+        setRole(null);
       }
-    );
+    });
 
     return () => listener.subscription.unsubscribe();
-  }, []);
+  }, [fetchRole]);
 
   return (
     <AuthContext.Provider value={{ user, role, loading }}>

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
-import DashboardNav from "../../components/navbar/DashboardNav";
+import Navbar from "../../components/navbar/Navbar";
 import { getDashboardStats } from "../../services/dashboardServices";
 
 type Stats = Record<string, number>;
@@ -11,182 +10,209 @@ const StatCard = ({ label, value }: { label: string; value: number }) => (
     background: "#0e1628",
     border: "1px solid rgba(255,255,255,0.07)",
     borderRadius: "12px",
-    padding: "1.25rem 1.5rem",
-    minWidth: "140px",
+    padding: "1.4rem 1.6rem",
+    minWidth: "150px",
+    flex: "1 1 150px",
   }}>
-    <div style={{ fontSize: "1.8rem", fontWeight: 600, color: "#e8a232" }}>{value}</div>
-    <div style={{ fontSize: "0.78rem", color: "#6b7a99", marginTop: "4px", textTransform: "uppercase", letterSpacing: "0.08em" }}>{label}</div>
+    <div style={{
+      fontSize: "2rem",
+      fontWeight: 600,
+      color: "#e8a232",
+      fontFamily: "'Playfair Display', serif",
+      lineHeight: 1,
+    }}>
+      {value.toLocaleString()}
+    </div>
+    <div style={{
+      fontSize: "0.72rem",
+      color: "#6b7a99",
+      marginTop: "6px",
+      textTransform: "uppercase",
+      letterSpacing: "0.1em",
+    }}>
+      {label}
+    </div>
   </div>
 );
 
-type TileProps = {
-  icon: React.ReactNode;
-  label: string;
-  description: string;
-  onClick: () => void;
-};
-
-const Tile = ({ icon, label, description, onClick }: TileProps) => (
-  <div
-    onClick={onClick}
-    style={{
-      background: "#0e1628",
-      border: "1px solid rgba(255,255,255,0.07)",
-      borderRadius: "14px",
-      padding: "1.5rem",
-      cursor: "pointer",
-      transition: "border-color 0.18s, transform 0.15s",
-      display: "flex",
-      flexDirection: "column",
-      gap: "0.75rem",
-    }}
-    onMouseEnter={e => {
-      (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(232,162,50,0.4)";
-      (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
-    }}
-    onMouseLeave={e => {
-      (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.07)";
-      (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
-    }}
-  >
-    <div style={{ color: "#e8a232", width: 32, height: 32 }}>{icon}</div>
-    <div>
-      <div style={{ color: "#eef2ff", fontWeight: 500, fontSize: "0.95rem" }}>{label}</div>
-      <div style={{ color: "#6b7a99", fontSize: "0.78rem", marginTop: "3px" }}>{description}</div>
-    </div>
+const StatCardSkeleton = () => (
+  <div style={{
+    background: "#0e1628",
+    border: "1px solid rgba(255,255,255,0.07)",
+    borderRadius: "12px",
+    padding: "1.4rem 1.6rem",
+    minWidth: "150px",
+    flex: "1 1 150px",
+  }}>
+    <div style={{
+      height: "2rem",
+      width: "60px",
+      background: "rgba(255,255,255,0.06)",
+      borderRadius: "6px",
+      marginBottom: "8px",
+      animation: "shimmer 1.5s ease-in-out infinite",
+    }} />
+    <div style={{
+      height: "0.65rem",
+      width: "90px",
+      background: "rgba(255,255,255,0.04)",
+      borderRadius: "4px",
+      animation: "shimmer 1.5s ease-in-out infinite 0.2s",
+    }} />
   </div>
 );
 
 function Dashboard() {
   const { user, role } = useAuth();
-  const navigate = useNavigate();
   const [stats, setStats] = useState<Stats | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getDashboardStats().then(setStats).catch(console.error);
+    getDashboardStats()
+      .then(setStats)
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
-  const userTiles = [
-    {
-      icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
-      label: "Browse Materials",
-      description: "Search and download study materials",
-      path: "/browse",
-    },
-    {
-      icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>,
-      label: "Upload Material",
-      description: "Share notes and resources with peers",
-      path: "/upload",
-    },
-  ];
+  const roleLabel =
+    role === "super_admin" ? "Super Admin" :
+    role === "admin" ? "Admin" :
+    "Member";
 
-  const adminTiles = [
-    ...userTiles,
-    {
-      icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
-      label: "Manage Materials",
-      description: "Review, delete or restore uploads",
-      path: "/browse",
-    },
-  ];
-
-  const superAdminTiles = [
-    ...adminTiles,
-    {
-      icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-      label: "User Management",
-      description: "Promote or demote user roles",
-      path: "/admin/users",
-    },
-    {
-      icon: <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
-      label: "Audit Logs",
-      description: "View all system activity",
-      path: "/admin/audit",
-    },
-  ];
-
-  const tiles =
-    role === "super_admin" ? superAdminTiles :
-    role === "admin" ? adminTiles :
-    userTiles;
-
-  const userStats = stats ? [
-    { label: "Materials Uploaded", value: stats.uploadCount ?? 0 },
-    { label: "Downloads Made", value: stats.downloadCount ?? 0 },
+  // Sections: personal stats first, then platform-wide for elevated roles
+  const personalStats = stats ? [
+    { label: "My Uploads", value: stats.uploadCount ?? 0 },
+    { label: "My Downloads", value: stats.downloadCount ?? 0 },
   ] : [];
 
-  const adminStats = stats ? [
+  const platformStats = stats && (role === "admin" || role === "super_admin") ? [
     { label: "Total Materials", value: stats.totalMaterials ?? 0 },
     { label: "Uploads Today", value: stats.uploadsToday ?? 0 },
     { label: "Deleted Materials", value: stats.deletedCount ?? 0 },
   ] : [];
 
-  const superAdminStats = stats ? [
-    { label: "Total Materials", value: stats.totalMaterials ?? 0 },
-    { label: "Uploads Today", value: stats.uploadsToday ?? 0 },
-    { label: "Deleted Materials", value: stats.deletedCount ?? 0 },
+  const adminOnlyStats = stats && role === "super_admin" ? [
     { label: "Total Users", value: stats.totalUsers ?? 0 },
     { label: "Audit Entries", value: stats.auditCount ?? 0 },
   ] : [];
 
-  const statCards =
-    role === "super_admin" ? superAdminStats :
-    role === "admin" ? adminStats :
-    userStats;
-
   return (
-    <div style={{ minHeight: "100vh", background: "#080f1f", fontFamily: "'DM Sans', sans-serif" }}>
-      <DashboardNav />
+    <>
+      <Navbar />
+      <div style={{
+        padding: "2.5rem 1.5rem 3rem",
+        maxWidth: "1000px",
+        margin: "0 auto",
+        fontFamily: "'DM Sans', sans-serif",
+      }}>
 
-      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "2.5rem 1.5rem" }}>
         {/* Header */}
-        <div style={{ marginBottom: "2rem" }}>
-          <h1 style={{ color: "#eef2ff", fontFamily: "'Playfair Display', serif", fontSize: "1.6rem", margin: 0 }}>
+        <div style={{ marginBottom: "2.5rem" }}>
+          <h1 style={{
+            color: "#f0f4ff",
+            fontFamily: "'Playfair Display', serif",
+            fontSize: "1.75rem",
+            margin: 0,
+            fontWeight: 600,
+          }}>
             Welcome back{user?.email ? `, ${user.email.split("@")[0]}` : ""}
           </h1>
-          <p style={{ color: "#6b7a99", fontSize: "0.85rem", marginTop: "6px" }}>
-            {role === "super_admin" ? "Super Admin" : role === "admin" ? "Admin" : "Member"} · {user?.email}
+          <p style={{ color: "#4f5f80", fontSize: "0.83rem", marginTop: "6px", margin: "6px 0 0" }}>
+            <span style={{
+              display: "inline-block",
+              background: "rgba(232,162,50,0.1)",
+              border: "1px solid rgba(232,162,50,0.2)",
+              color: "#e8a232",
+              fontSize: "0.68rem",
+              fontWeight: 500,
+              padding: "0.15rem 0.55rem",
+              borderRadius: "100px",
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              marginRight: "0.5rem",
+            }}>
+              {roleLabel}
+            </span>
+            {user?.email}
           </p>
         </div>
 
-        {/* Tiles */}
-        <div style={{ marginBottom: "1rem" }}>
-          <p style={{ color: "#4f5f80", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "1rem" }}>
-            Quick Actions
-          </p>
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-            gap: "1rem",
-          }}>
-            {tiles.map((tile) => (
-              <Tile
-                key={tile.label}
-                icon={tile.icon}
-                label={tile.label}
-                description={tile.description}
-                onClick={() => navigate(tile.path)}
-              />
-            ))}
-          </div>
-        </div>
-        <br />
-        <h2 className="text-white">Stats</h2>
-        {/* Stats */}
-        {stats && (
-          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "2.5rem" }}>
-            {statCards.map((s) => (
-              <StatCard key={s.label} label={s.label} value={s.value} />
-            ))}
-          </div>
+        {/* Personal stats */}
+        <Section label="My Activity">
+          {loading ? (
+            <StatsRow>
+              <StatCardSkeleton /><StatCardSkeleton />
+            </StatsRow>
+          ) : (
+            <StatsRow>
+              {personalStats.map((s) => <StatCard key={s.label} label={s.label} value={s.value} />)}
+            </StatsRow>
+          )}
+        </Section>
+
+        {/* Platform stats — admin + super_admin */}
+        {(role === "admin" || role === "super_admin") && (
+          <Section label="Platform Overview">
+            {loading ? (
+              <StatsRow>
+                <StatCardSkeleton /><StatCardSkeleton /><StatCardSkeleton />
+              </StatsRow>
+            ) : (
+              <StatsRow>
+                {platformStats.map((s) => <StatCard key={s.label} label={s.label} value={s.value} />)}
+              </StatsRow>
+            )}
+          </Section>
         )}
 
-        
+        {/* Super admin only */}
+        {role === "super_admin" && (
+          <Section label="Administration">
+            {loading ? (
+              <StatsRow>
+                <StatCardSkeleton /><StatCardSkeleton />
+              </StatsRow>
+            ) : (
+              <StatsRow>
+                {adminOnlyStats.map((s) => <StatCard key={s.label} label={s.label} value={s.value} />)}
+              </StatsRow>
+            )}
+          </Section>
+        )}
       </div>
-    </div>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=DM+Sans:wght@300;400;500&display=swap');
+        @keyframes shimmer {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+      `}</style>
+    </>
   );
 }
+
+// Small layout helpers defined inline to avoid extra files
+const Section = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <div style={{ marginBottom: "2rem" }}>
+    <p style={{
+      color: "#4f5f80",
+      fontSize: "0.7rem",
+      textTransform: "uppercase",
+      letterSpacing: "0.1em",
+      marginBottom: "0.85rem",
+      margin: "0 0 0.85rem",
+    }}>
+      {label}
+    </p>
+    {children}
+  </div>
+);
+
+const StatsRow = ({ children }: { children: React.ReactNode }) => (
+  <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+    {children}
+  </div>
+);
 
 export default Dashboard;

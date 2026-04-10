@@ -1,4 +1,3 @@
-import { supabase } from "../../services/supabaseClient";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import "./Navbar.css";
@@ -10,36 +9,25 @@ function Navbar() {
   const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setMenuOpen(false);
-    navigate("/login");
-  };
+  const currentPath = location.pathname;
 
   const handleNav = (path: string) => {
     setMenuOpen(false);
     navigate(path);
   };
 
-  const isOnPage = (path: string) => location.pathname === path;
+  // Links to show — hide the one matching current page
+  const links = [
+    { label: "Home", path: "/" },
+    { label: "Browse", path: "/browse" },
+    ...(user ? [{ label: "Upload", path: "/upload" }] : []),
+  ].filter((l) => l.path !== currentPath);
 
   return (
     <nav className="navbar">
       <div className="navbar-inner">
-        {/* Back button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="btn-logout"
-          style={{ marginRight: "0.25rem" }}
-          title="Go back"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
-
         {/* Brand */}
-        <div className="navbar-brand" onClick={() => handleNav("/dashboard")}>
+        <div className="navbar-brand" onClick={() => handleNav("/")}>
           <div className="brand-icon">
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
               <rect x="2" y="2" width="8" height="10" rx="1.5" fill="currentColor" opacity="0.9" />
@@ -54,32 +42,22 @@ function Navbar() {
           </div>
         </div>
 
-        {/* Desktop Nav Links */}
+        {/* Desktop links */}
         <div className="navbar-links">
-          <a className="nav-link" onClick={() => handleNav("/dashboard")}>Dashboard</a>
-          {user && !isOnPage("/browse") && (
-            <a className="nav-link" onClick={() => handleNav("/browse")}>Browse</a>
-          )}
-          {user && !isOnPage("/upload") && (
-            <a className="nav-link" onClick={() => handleNav("/upload")}>Upload</a>
-          )}
+          {links.map((l) => (
+            <a key={l.path} className="nav-link" onClick={() => handleNav(l.path)}>
+              {l.label}
+            </a>
+          ))}
         </div>
 
-        {/* Desktop Auth */}
+        {/* Desktop actions — avatar only (no logout) */}
         <div className="navbar-actions">
           {user ? (
             <div className="user-section">
               <div className="user-avatar" title={user.email}>
                 {user.email?.[0]?.toUpperCase() ?? "U"}
               </div>
-              <button className="btn-logout" onClick={handleLogout}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                  <polyline points="16 17 21 12 16 7" />
-                  <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
-                Logout
-              </button>
             </div>
           ) : (
             <button className="btn-login" onClick={() => handleNav("/login")}>
@@ -93,7 +71,7 @@ function Navbar() {
           )}
         </div>
 
-        {/* Mobile Hamburger */}
+        {/* Mobile hamburger */}
         <button
           className={`hamburger ${menuOpen ? "open" : ""}`}
           onClick={() => setMenuOpen((v) => !v)}
@@ -103,31 +81,26 @@ function Navbar() {
         </button>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile drawer */}
       <div className={`mobile-drawer ${menuOpen ? "visible" : ""}`}>
-        <a className="drawer-link" onClick={() => handleNav("/dashboard")}>Dashboard</a>
-        {user && !isOnPage("/browse") && (
-          <a className="drawer-link" onClick={() => handleNav("/browse")}>Browse</a>
-        )}
-        {user && !isOnPage("/upload") && (
-          <a className="drawer-link" onClick={() => handleNav("/upload")}>Upload</a>
-        )}
+        {links.map((l) => (
+          <a key={l.path} className="drawer-link" onClick={() => handleNav(l.path)}>
+            {l.label}
+          </a>
+        ))}
         <div className="drawer-divider" />
         {user ? (
           <div className="drawer-user">
             <div className="drawer-email">{user.email}</div>
-            <button className="btn-logout drawer-btn" onClick={handleLogout}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                <polyline points="16 17 21 12 16 7" />
-                <line x1="21" y1="12" x2="9" y2="12" />
-              </svg>
-              Logout
-            </button>
           </div>
         ) : (
           <button className="btn-login drawer-btn" onClick={() => handleNav("/login")}>
             Sign In
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+              <polyline points="10 17 15 12 10 7" />
+              <line x1="15" y1="12" x2="3" y2="12" />
+            </svg>
           </button>
         )}
       </div>

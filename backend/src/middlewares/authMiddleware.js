@@ -1,5 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 
+// Admin client — created once at module load, never exposed to users
+// Service role bypasses RLS so user_roles lookup always works
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
 export async function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
 
@@ -9,37 +16,34 @@ export async function authMiddleware(req, res, next) {
 
   const token = authHeader.replace("Bearer ", "").trim();
 
-  const supabase = createClient(
+  // Per-request user client — used for RLS-respecting queries elsewhere
+  const supabaseUser = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_ANON_KEY,
     {
       global: {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       },
     }
   );
 
-  const { data: authData, error: authError } = await supabase.auth.getUser();
+  const { data: authData, error: authError } = await supabaseUser.auth.getUser();
 
   if (authError || !authData?.user) {
     return res.status(401).json({ message: "Invalid Token" });
   }
 
   req.user = authData.user;
-  req.supabase = supabase;
+  req.supabase = supabaseUser;
 
-  const { data: roleRow, error: roleError } = await supabase
+  // Use admin client to look up role — bypasses RLS, no false negatives
+  const { data: roleRow } = await supabaseAdmin
     .from("user_roles")
     .select("role")
     .eq("user_id", authData.user.id)
-    .single();
+    .maybeSingle(); // maybeSingle: returns null (not error) when no row found
 
-  if (roleError) {
-    req.userRole = "user";
-  } else {
-    req.userRole = roleRow.role;
-  }
+  req.userRole = roleRow?.role ?? "user";
+
   next();
 }
