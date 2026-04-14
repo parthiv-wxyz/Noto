@@ -16,7 +16,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/admin", adminRoute);
-app.use("/ping", pingRoute);
+app.use("/api/ping", pingRoute);
 app.use("/api/material", materialsRoute);
 app.use("/updates", updatesRoute);
 app.use("/api/questionpapers", questionPapersRoute);

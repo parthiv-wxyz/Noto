@@ -1,6 +1,6 @@
-import { createContext, useEffect, useState, useCallback } from "react";
+import { createContext, useEffect, useState } from "react";
 import { supabase } from "../services/supabaseClient";
-import api from "../services/api";
+import api  from "../services/api";
 
 type AuthContextType = {
   user: any;
@@ -19,35 +19,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchRole = useCallback(async () => {
-    try {
-      const res = await api.get("/ping");
-      setRole(res.data?.role ?? "user");
-    } catch {
-      setRole("user");
-    }
-  }, []);
+  const fetchRole = async () => {
+  try {
+    const res = await api.get("/ping");
+    console.log("PING RESPONSE:", res.data);
+    setRole(res.data.role ?? "user");
+  } catch (err) {
+    console.error("PING ERROR:", err);
+    setRole("user");
+  }
+};
 
   useEffect(() => {
-    // Initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-
-      if (currentUser) {
-        fetchRole().finally(() => setLoading(false));
-      } else {
-        setRole(null);
-        setLoading(false);
-      }
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+      if (data.user) fetchRole();
+      setLoading(false);
     });
 
-    // Listen for auth state changes (login, logout, token refresh)
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      const newUser = session?.user ?? null;
-      setUser(newUser);
-
-      if (newUser) {
+      setUser(session?.user ?? null);
+      if (session?.user) {
         fetchRole();
       } else {
         setRole(null);
@@ -55,7 +47,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     return () => listener.subscription.unsubscribe();
-  }, [fetchRole]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, role, loading }}>
